@@ -21,6 +21,7 @@ class Product extends Model
     {
         return $this->hasMany(ProductPosition::class);
     }
+    // for deleting all related products in another tables
     protected static function boot()
     {
         parent::boot();

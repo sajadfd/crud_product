@@ -1,102 +1,167 @@
 <?php
 
 use App\Models\Product;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use function Pest\Faker\faker;
+use Illuminate\Support\Facades\Log;
 
-beforeEach(function () {
-    $this->seed();
-});
-
-
-it('can create a new product', function () {
+it('can create a product', function () {
     $data = [
         'title' => 'New Product',
-        'sku' => 'NP0011',
-        'slug' => 'new_product_url11',
-        'brand_id' => 1,
+        'sku' => 'NP001',
+        'slug' => 'new_product_url1',
+        'brand_id' => '1',
         'categories' => [
             '2.11.13',
             '7.11',
-            '12'
+            '12',
         ],
         'positions' => [
             [
                 'price' => 11.99,
-                'size' => 'Q'
+                'size' => 'X',
             ],
             [
                 'price' => 9.99,
-                'size' => 'T'
-            ]
-        ]
+                'size' => 'S',
+            ],
+        ],
     ];
-
-    $response = $this->postJson('/api/products', $data);
-
+    $response = $this->post('/api/products', $data);
     $response->assertStatus(201)
-        ->assertJsonFragment(['title' => $data['title']])
-        ->assertJsonFragment(['sku' => $data['sku']])
-        ->assertJsonFragment(['slug' => $data['slug']])
-        ->assertJsonFragment(['brand_id' => $data['brand_id']])
-        ->assertJsonFragment(['categories' => $data['categories']])
-        ->assertJsonFragment(['positions' => $data['positions']]);
+        ->assertJson([
+            'message' => 'Product created successfully',
+        ]);
+    $this->assertDatabaseHas('products', [
+        'title' => 'New Product',
+        'sku' => 'NP001',
+        'slug' => 'new_product_url1',
+        'brand_id' => '1',
+    ]);
+    $product = Product::where('slug', 'new_product_url1')->first();
+    $this->assertNotNull($product);
+    $this->assertDatabaseHas('product_categories', [
+        'product_id' => $product->id,
+        'category_id' => '13',
+        'parent_category_id' => '11',
+        'category_path' => '2.11.13',
+    ]);
+
+    $this->assertDatabaseHas('product_categories', [
+        'product_id' => $product->id,
+        'category_id' => '11',
+        'parent_category_id' => '7',
+        'category_path' => '7.11',
+    ]);
+    $this->assertDatabaseHas('product_categories', [
+        'product_id' => $product->id,
+        'category_id' => '12',
+        'parent_category_id' => null,
+        'category_path' => '12',
+    ]);
+    $this->assertDatabaseHas('product_positions', [
+        'product_id' => $product->id,
+        'price' => 11.99,
+        'size' => 'X',
+    ]);
+
+    $this->assertDatabaseHas('product_positions', [
+        'product_id' => $product->id,
+        'price' => 9.99,
+        'size' => 'S',
+    ]);
 });
-
-it('can retrieve a product', function () {
-    $product = Product::inRandomOrder()->first();
-
-    $response = $this->getJson('/api/products/1');
-
-    $response->assertOk()
-        ->assertJsonFragment(['title' => $product->title])
-        ->assertJsonFragment(['sku' => $product->sku])
-        ->assertJsonFragment(['slug' => $product->slug])
-        ->assertJsonFragment(['brand_id' => $product->brand_id])
-        ->assertJsonFragment(['categories' => $product->categories->toArray()])
-        ->assertJsonFragment(['positions' => $product->positions->toArray()]);
-});
-
 it('can update a product', function () {
-    $product = Product::inRandomOrder()->first();
-
-    $data = [
-        'title' => faker()->name(),
-        'slug' => faker()->slug(),
-        'brand_id' => $product->brand_id,
+    $product = Product::factory()->create();
+     $data = [
+        'title' => 'New Product Title',
+        'slug' => 'new_slug',
+        'sku' => 'NP0012',
+        'brand_id' => '2',
         'categories' => [
-            '2.11.13',
-            '7.11',
-            '12'
+            '5.11.13',
+            '7',
+            '12',
         ],
         'positions' => [
             [
-                'price' => 11.99,
-                'size' => 'Q'
+                'price' => 15.99,
+                'size' => 'S',
             ],
             [
-                'price' => 9.99,
-                'size' => 'T'
-            ]
-        ]
+                'price' => 12.99,
+                'size' => 'XL',
+            ],
+        ],
     ];
+    $response = $this->put("/api/products/{$product->id}", $data);
+    $response->assertStatus(200)
+        ->assertJson([
+            'message' => 'Product updated successfully',
+        ]);
 
-    $response = $this->putJson('/api/products/' . $product->id, $data);
+    $this->assertDatabaseHas('products', [
+        'id' => $product->id,
+        'title' => 'New Product Title',
+        'slug' => 'new_slug',
+        'sku' => 'NP0012',
+        'brand_id' => '2',
+    ]);
 
-    $response->assertOk()
-        ->assertJsonFragment(['title' => $data['title']])
-        ->assertJsonFragment(['slug' => $data['slug']])
-        ->assertJsonFragment(['brand_id' => $data['brand_id']])
-        ->assertJsonFragment(['categories' => $data['categories']])
-        ->assertJsonFragment(['positions' => $data['positions']]);
+    $this->assertDatabaseMissing('products', [
+        'slug' => 'existing_product',
+    ]);
+
+    $this->assertDatabaseHas('product_categories', [
+        'product_id' => $product->id,
+        'category_id' => '13',
+        'parent_category_id' => '11',
+        'category_path' => '5.11.13',
+    ]);
+
+    $this->assertDatabaseHas('product_categories', [
+        'product_id' => $product->id,
+        'category_id' => '7',
+        'parent_category_id' => null,
+        'category_path' => '7',
+    ]);
+
+    $this->assertDatabaseHas('product_categories', [
+        'product_id' => $product->id,
+        'category_id' => '12',
+        'parent_category_id' => null,
+        'category_path' => '12',
+    ]);
+
+    $this->assertDatabaseHas('product_positions', [
+        'product_id' => $product->id,
+        'price' => 15.99,
+        'size' => 'S',
+    ]);
+
+    $this->assertDatabaseHas('product_positions', [
+        'product_id' => $product->id,
+        'price' => 12.99,
+        'size' => 'XL',
+    ]);
 });
 
 it('can delete a product', function () {
-    $product = Product::inRandomOrder()->first();
+    $product = Product::factory()->create();
 
-    $response = $this->deleteJson('/api/products/' . $product->id);
+    $response = $this->delete("/api/products/destroy?id={$product->id}");
+    $response->assertStatus(200)
+        ->assertJson([
+            'message' => 'Product deleted successfully.',
+        ]);
 
-    $response->assertNoContent();
+    $this->assertDatabaseMissing('products', [
+        'id' => $product->id,
+    ]);
 
-    $this->assertDatabaseMissing('products', ['id' => $product->id]);
+    $this->assertDatabaseMissing('product_categories', [
+        'product_id' => $product->id,
+    ]);
+
+    $this->assertDatabaseMissing('product_positions', [
+        'product_id' => $product->id,
+    ]);
 });

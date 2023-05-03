@@ -20,17 +20,14 @@ class ProductRepository
             return response()->json(null);
         }
     }
-
     public function createProduct(array $data)
     {
         return Product::create($data);
     }
-
     public function updateProduct(Product $product, array $data)
     {
         return $product->update($data);
     }
-
     public function deleteProduct(Product $product)
     {
         return $product->delete();

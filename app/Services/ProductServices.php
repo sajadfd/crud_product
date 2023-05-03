@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-
 class ProductServices
 {
     public  function getCategoryIdsFromPath($path)

@@ -57,7 +57,7 @@ class ProductController extends Controller
     {
         return new ProductAllResource($product->load(['brand', 'categories', 'positions']));
     }
-    public function create(ProductRequest $request): JsonResponse
+    public function store(ProductRequest $request): JsonResponse
     {
         try {
             // Create the product
