@@ -12,11 +12,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('category_parents', function (Blueprint $table) {
-            // $table->id();
-            // $table->unsignedBigInteger('parent_id');
-            // $table->unsignedBigInteger('category_id');
-            // $table->timestamps();
-
             $table->id();
             $table->unsignedBigInteger('parent_id');
             $table->unsignedBigInteger('category_id');

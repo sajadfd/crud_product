@@ -12,12 +12,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('product_categories', function (Blueprint $table) {
-            // $table->id();
-            // $table->unsignedBigInteger('product_id');
-            // $table->unsignedBigInteger('category_id');
-            // $table->unsignedBigInteger('parent_category_id')->nullable();
-            // $table->string('category_path');
-            // $table->timestamps();
             $table->id();
             $table->unsignedBigInteger('product_id');
             $table->unsignedBigInteger('category_id');

@@ -42,18 +42,12 @@ class ProductRequest extends FormRequest
 
     public function store()
     {
-
         return [
-            // 'title' => 'required|string|max:255',
-            // 'slug' => 'required|string|unique:products|max:255',
-            // 'sku' => 'required|string|unique:products|max:255',
-            // 'brand_id' => 'required|integer|exists:brands,id'
-            'title' => 'required|string|max:255|unique:products',
+            'title' => 'required|string|max:255',
             'sku' => 'required|string|max:50|unique:products',
             'slug' => 'required|string|max:255|unique:products',
             'brand_id' => 'required|integer|exists:brands,id',
             'categories' => 'required|array|min:1',
-            // 'categories.*' => 'required|exists:categories,id',
             'categories.*' => 'required|string',
             'positions' => 'required|array|min:1',
             'positions.*.price' => 'required|numeric|min:0',
@@ -64,24 +58,30 @@ class ProductRequest extends FormRequest
     public function update()
     {
         return [
-            'title' => 'sometimes|required|string|max:255',
-            'sku' => 'sometimes|required|string|max:50',
-            'slug' => 'sometimes|required|string|max:255',
-            'brand_id' => 'sometimes|required|integer|exists:brands,id',
-            'categories' => 'sometimes|required|array|min:1',
-            'categories.*' => 'sometimes|required|exists:categories,id',
-            'positions' => 'sometimes|required|array|min:1',
-            'positions.*.price' => 'sometimes|required|numeric|min:0',
-            'positions.*.size' => 'sometimes|required|string|max:10',
+            'title' => 'required|string|max:255',
+            'sku' => 'required|string|max:50|unique:products',
+            'slug' => 'required|string|max:255|unique:products',
+            'brand_id' => 'required|integer|exists:brands,id',
+            'categories' => 'required|array|min:1',
+            'categories.*' => 'required|string',
+            'positions' => 'required|array|min:1',
+            'positions.*.price' => 'required|numeric|min:0',
+            'positions.*.size' => 'required|string|max:10',
         ];
     }
     public function destroy()
     {
-        return [];
+        return [
+            'id' => 'required|integer|exists:products,id',
+        ];
     }
     public function view()
     {
-        return [];
+        return  [
+            'filter.size' => 'sometimes|required|string',
+            'search' => 'required_with_all:searchBy|string',
+            'searchBy' => 'required_with_all:search|string|in:id,title,sku',
+        ];
     }
     protected function failedValidation(Validator $validator)
     {

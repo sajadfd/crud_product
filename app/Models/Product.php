@@ -13,23 +13,20 @@ class Product extends Model
     {
         return $this->belongsTo(Brand::class);
     }
-
-    public function productCategories()
-    {
-        return $this->hasMany(ProductCategory::class);
-    }
-
-    public function productPositions()
-    {
-        return $this->hasMany(ProductPosition::class);
-    }
-    // public function categories()
-    // {
-    //     return $this->belongsToMany(Category::class, 'product_categories', 'product_id', 'category_id')
-    //         ->withPivot('parent_category_id', 'category_path');
-    // }
     public function categories()
     {
         return $this->belongsToMany(Category::class, 'product_categories');
+    }
+    public function positions()
+    {
+        return $this->hasMany(ProductPosition::class);
+    }
+    protected static function boot()
+    {
+        parent::boot();
+        static::deleting(function ($product) {
+            $product->categories()->detach();
+            $product->positions()->delete();
+        });
     }
 }
