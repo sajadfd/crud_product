@@ -1,80 +1,102 @@
 <?php
 
-namespace Tests\Feature;
-
-use App\Http\Controllers\ProductController;
-use App\Http\Requests\ProductRequest;
 use App\Models\Product;
-use App\Repositories\ProductRepository;
-use Database\Factories\ProductFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
+use function Pest\Faker\faker;
 
-class ProductControllerTest extends TestCase
-{
-    use RefreshDatabase;
+beforeEach(function () {
+    $this->seed();
+});
 
-    public function test_can_create_a_new_product()
-    {
-        $data = [
-            'title' => 'New Product',
-            'sku' => 'NP0011',
-            'slug' => 'new_product_url11',
-            'brand_id' => 1,
-            'categories' => ['2.11.13', '7.11', '12'],
-            'positions' => [
-                ['size' => 'Q', 'price' => 11.99],
-                ['size' => 'T', 'price' => 9.99],
+
+it('can create a new product', function () {
+    $data = [
+        'title' => 'New Product',
+        'sku' => 'NP0011',
+        'slug' => 'new_product_url11',
+        'brand_id' => 1,
+        'categories' => [
+            '2.11.13',
+            '7.11',
+            '12'
+        ],
+        'positions' => [
+            [
+                'price' => 11.99,
+                'size' => 'Q'
             ],
-        ];
-    
-        $response = $this->postJson('/api/products', $data);
-    
-        $response->assertStatus(201);
-        $response->assertJson(['message' => 'Product created successfully']);
-    }
+            [
+                'price' => 9.99,
+                'size' => 'T'
+            ]
+        ]
+    ];
 
-    public function test_can_retrieve_a_product()
-    {
-        $product = Product::factory()->create();
-    
-        $response = $this->getJson('/api/products/' . $product->id);
-    
-        $response->assertOk();
-        $response->assertJson(['title' => $product->title]);
-    }
+    $response = $this->postJson('/api/products', $data);
 
-    public function test_can_update_a_product()
-    {
-        $product = Product::factory()->create();
-    
-        $data = [
-            'title' => 'Updated Product Title',
-            'sku' => 'UPD001',
-            'slug' => 'updated_product_url',
-            'brand_id' => 2,
-            'categories' => ['1.2.5', '8'],
-            'positions' => [
-                ['size' => 'Q', 'price' => 12.99],
-                ['size' => 'T', 'price' => 10.99],
+    $response->assertStatus(201)
+        ->assertJsonFragment(['title' => $data['title']])
+        ->assertJsonFragment(['sku' => $data['sku']])
+        ->assertJsonFragment(['slug' => $data['slug']])
+        ->assertJsonFragment(['brand_id' => $data['brand_id']])
+        ->assertJsonFragment(['categories' => $data['categories']])
+        ->assertJsonFragment(['positions' => $data['positions']]);
+});
+
+it('can retrieve a product', function () {
+    $product = Product::inRandomOrder()->first();
+
+    $response = $this->getJson('/api/products/1');
+
+    $response->assertOk()
+        ->assertJsonFragment(['title' => $product->title])
+        ->assertJsonFragment(['sku' => $product->sku])
+        ->assertJsonFragment(['slug' => $product->slug])
+        ->assertJsonFragment(['brand_id' => $product->brand_id])
+        ->assertJsonFragment(['categories' => $product->categories->toArray()])
+        ->assertJsonFragment(['positions' => $product->positions->toArray()]);
+});
+
+it('can update a product', function () {
+    $product = Product::inRandomOrder()->first();
+
+    $data = [
+        'title' => faker()->name(),
+        'slug' => faker()->slug(),
+        'brand_id' => $product->brand_id,
+        'categories' => [
+            '2.11.13',
+            '7.11',
+            '12'
+        ],
+        'positions' => [
+            [
+                'price' => 11.99,
+                'size' => 'Q'
             ],
-        ];
-    
-        $response = $this->putJson('/api/products/' . $product->id, $data);
-    
-        $response->assertOk();
-        $response->assertJson(['message' => 'Product updated successfully']);
-    }
-    public function test_can_delete_a_product()
-    {
-        $product = ProductFactory::new()->create();
+            [
+                'price' => 9.99,
+                'size' => 'T'
+            ]
+        ]
+    ];
 
-        $request = new ProductRequest(['id' => $product->id]);
-        $controller = new ProductController(new ProductRepository(new Product()));
-        $response = $controller->destroy($request);
+    $response = $this->putJson('/api/products/' . $product->id, $data);
 
-        $response->assertStatus(200);
-        $response->assertJson(['message' => 'Product deleted successfully']);
-        $this->assertNull(Product::find($product->id));
-    }
-}
+    $response->assertOk()
+        ->assertJsonFragment(['title' => $data['title']])
+        ->assertJsonFragment(['slug' => $data['slug']])
+        ->assertJsonFragment(['brand_id' => $data['brand_id']])
+        ->assertJsonFragment(['categories' => $data['categories']])
+        ->assertJsonFragment(['positions' => $data['positions']]);
+});
+
+it('can delete a product', function () {
+    $product = Product::inRandomOrder()->first();
+
+    $response = $this->deleteJson('/api/products/' . $product->id);
+
+    $response->assertNoContent();
+
+    $this->assertDatabaseMissing('products', ['id' => $product->id]);
+});
